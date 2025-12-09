@@ -9,8 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.keys import Keys
-from print_dialog_automation import automate_print_dialog_hp_fixed, automate_print_dialog_keyboard_fallback 
-# ↑↑↑ Print dialog automation functions imported from the new file ↑↑↑
+# Ab sirf ek he function import ho raha hai:
+from print_dialog_automation import automate_print_dialog_keyboard_fallback 
 
 # -----------------------------
 # Credentials and configuration
@@ -289,19 +289,15 @@ def run_flow():
             driver.save_screenshot("error_daraz_print.png")
             return
 
-        # 11) Automate Chrome print dialog with FIXED methods
+        # 11) Automate Chrome print dialog with ONLY KEYBOARD FALLBACK (Method 2)
         print("=" * 60)
         print("[INFO] Starting Chrome print dialog automation...")
         print(f"[INFO] Target printer: {PRINTER_NAME}")
+        print("[INFO] **Using ONLY KEYBOARD FALLBACK method (Method 2)**")
         print("=" * 60)
         
-        # Try FIXED method first
-        success = automate_print_dialog_hp_fixed()
-        
-        # If failed, try keyboard fallback
-        if not success:
-            print("[WARN] Mouse method failed, trying KEYBOARD FALLBACK...")
-            success = automate_print_dialog_keyboard_fallback()
+        # Directly call the keyboard fallback method (Method 2)
+        success = automate_print_dialog_keyboard_fallback()
         
         if success:
             print("=" * 60)
