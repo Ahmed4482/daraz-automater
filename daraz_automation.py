@@ -9,15 +9,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.keys import Keys
-# Ab sirf ek he function import ho raha hai:
 from print_dialog_automation import automate_print_dialog_keyboard_fallback 
 
 # -----------------------------
 # Credentials and configuration
 # -----------------------------
-EMAIL = "ahmedsemporium@gmail.com"
-PASSWORD = "Ahm@d2003"
-PRINTER_NAME = "HP LaserJet 1020"  # Your printer name
+EMAIL = "03332758016" # UPDATED EMAIL
+PASSWORD = "T@ha2005" # UPDATED PASSWORD
+PRINTER_NAME = "HP LaserJet 1020" # Your printer name
 
 # PyAutoGUI settings
 pyautogui.FAILSAFE = True
@@ -47,279 +46,273 @@ def run_flow():
 
         # 1) Open initial page
         driver.get("https://sellercenter.daraz.pk/apps/seller/login")
-        print("[STEP] Opened initial page")
+        print("[STEP 1] Opened initial page")
         time.sleep(3)
 
-        # 2) Click the initial "Log in" link
+        # 2-6) Login and Navigate to Orders List 
         try:
-            initial_login_link = wait.until(
-                EC.element_to_be_clickable((By.LINK_TEXT, "Log in"))
-            )
-            initial_login_link.click()
-            print("[STEP] Clicked initial 'Log in' link")
-            time.sleep(3)
-            
-            if len(driver.window_handles) > 1:
-                driver.switch_to.window(driver.window_handles[-1])
-                print("[STEP] Switched to new login tab")
-            time.sleep(3)
-            
-        except TimeoutException:
+            # Login link clicks and window switch (if applicable)
             try:
-                initial_login_link = wait.until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, "to-login-link"))
-                )
+                initial_login_link = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "Log in")))
                 initial_login_link.click()
-                print("[STEP] Clicked initial 'Log in' link (via class)")
+                print("[STEP 2] Clicked initial 'Log in' link")
                 time.sleep(3)
-                
                 if len(driver.window_handles) > 1:
                     driver.switch_to.window(driver.window_handles[-1])
-                    print("[STEP] Switched to new login tab")
+                    print("[STEP 2] Switched to new login tab")
                 time.sleep(3)
-                
-            except TimeoutException:
-                print("[WARN] Initial login link not found, proceeding...")
+            except:
+                 try:
+                    initial_login_link = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "to-login-link")))
+                    initial_login_link.click()
+                    if len(driver.window_handles) > 1:
+                        driver.switch_to.window(driver.window_handles[-1])
+                    time.sleep(3)
+                 except:
+                    print("[WARN] Initial login link not found, proceeding...")
 
-        print(f"[DEBUG] Current URL: {driver.current_url}")
-        
-        # 3) Enter email
-        try:
-            print("[DEBUG] Waiting for account field...")
-            email_field = wait.until(
-                EC.presence_of_element_located((By.ID, "account"))
-            )
-            print("[DEBUG] Found email field")
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", email_field)
-            time.sleep(2)
-            driver.execute_script("arguments[0].click();", email_field)
-            time.sleep(1)
-            email_field.clear()
+            # Enter email
+            email_field = wait.until(EC.presence_of_element_located((By.ID, "account")))
             email_field.send_keys(EMAIL)
-            print("[STEP] Entered email")
+            print("[STEP 3] Entered email")
             time.sleep(2)
-        except TimeoutException:
-            print(f"[ERROR] Could not find email field. Current URL: {driver.current_url}")
-            driver.save_screenshot("error_screenshot.png")
-            raise
 
-        # 4) Enter password
-        try:
-            print("[DEBUG] Waiting for password field...")
-            password_field = wait.until(
-                EC.presence_of_element_located((By.ID, "password"))
-            )
-            print("[DEBUG] Found password field")
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", password_field)
-            time.sleep(2)
-            driver.execute_script("arguments[0].click();", password_field)
-            time.sleep(1)
-            password_field.clear()
+            # Enter password
+            password_field = wait.until(EC.presence_of_element_located((By.ID, "password")))
             password_field.send_keys(PASSWORD)
-            print("[STEP] Entered password")
+            print("[STEP 4] Entered password")
             time.sleep(2)
-        except TimeoutException:
-            print(f"[ERROR] Could not find password field.")
-            driver.save_screenshot("error_screenshot_password.png")
-            raise
 
-        # 5) Click login button
-        try:
-            print("[DEBUG] Looking for Login button...")
-            login_button = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//button[@type='submit' and contains(@class, 'login-button')]"))
-            )
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", login_button)
-            time.sleep(2)
+            # Click login button
+            login_button = wait.until(EC.presence_of_element_located((By.XPATH, "//button[@type='submit' and contains(@class, 'login-button')]")))
             driver.execute_script("arguments[0].click();", login_button)
-            print("[STEP] Clicked login submit button")
+            print("[STEP 5] Clicked login submit button")
             time.sleep(5)
-        except TimeoutException:
-            print("[ERROR] Could not find login submit button")
-            raise
 
-        # 6) Wait for home page
-        wait.until(EC.url_contains("/apps/home"))
-        print("[STEP] Logged in and on home page")
-        time.sleep(3)
+            # Wait for home page
+            wait.until(EC.url_contains("/apps/home"))
+            print("[STEP 6] Logged in and on home page")
+            time.sleep(3)
+        except Exception as e:
+            print(f"[ERROR] Login failed: {e}")
+            raise
 
         # 7) Navigate to orders list
         driver.get("https://sellercenter.daraz.pk/apps/order/list")
-        print("[STEP] Opened orders list")
+        print("[STEP 7] Opened orders list")
         time.sleep(4)
+        
+        # Get window handles before print dialog *might* open
+        window_handles_before = driver.window_handles
 
-        # 8) Check if "To Pack" tab has empty data
+
+        # 8) Check if "To Pack" tab has empty data and proceed
         print("[DEBUG] Checking if 'To Pack' has orders...")
+        
+        # Check for 'Empty data' message first (more explicit check for no orders)
+        has_orders = True
         try:
-            empty_data = driver.find_elements(By.CLASS_NAME, "list-empty-content")
-            if len(empty_data) > 0 and empty_data[0].is_displayed():
-                print("[INFO] 'To Pack' is empty. Switching to 'To Handover' tab...")
+            # Look for the specific 'Empty data' div. We use a short timeout (5s) for this check.
+            empty_data_element = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "list-empty-content"))
+            )
+            # We also check the text content to be absolutely sure it's the "Empty data" message
+            if empty_data_element.text.strip() == "Empty data":
+                has_orders = False
+                print("[DEBUG] Found 'Empty data' text. Setting has_orders = False.")
+        except TimeoutException:
+            # If the empty data element is not found in 5s, we assume orders are present.
+            has_orders = True
+            print("[DEBUG] 'Empty data' element not found (Timeout). Assuming orders are present.")
+
+        try:
+            if has_orders:
+                # --- PRIMARY FLOW START: To Pack Has Orders (COMBINED FLOW) ---
                 
+                print("[INFO] 'To Pack' has orders. Proceeding with Pack & Print and full print sequence...")
+                
+                # 8.A.1 Select all orders in 'To Pack'
+                select_all_checkbox = wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input[type='checkbox']"))
+                )
+                driver.execute_script("arguments[0].click();", select_all_checkbox)
+                print("[STEP 8.A.1] Selected all pending orders in 'To Pack'")
+                time.sleep(3)
+
+                # 8.A.2 Click Pack & Print
+                pack_print_button = wait.until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//span[contains(text(), 'Pack') and contains(text(), 'Print')]/parent::button")
+                    )
+                )
+                driver.execute_script("arguments[0].click();", pack_print_button)
+                print("[STEP 8.A.2] Clicked Pack & Print")
+                time.sleep(3)
+
+                # 8.A.3 Handle Confirmation Pop-up (Click X button to close it)
+                try:
+                    # Targeting the close icon element
+                    close_button = WebDriverWait(driver, 8).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, "a.next-dialog-close[aria-label='Close']"))
+                    )
+                    driver.execute_script("arguments[0].click();", close_button)
+                    print("[STEP 8.A.3] Clicked 'Close (X)' on confirmation dialog")
+                except TimeoutException:
+                    print("[WARN] Could not find 'Close (X)' button. Assuming dialog did not appear.")
+                time.sleep(5)
+                
+                # --- The 'Pack & Print' is done, orders are now in 'To Arrange Shipment' ---
+
+                # 8.A.4 Switch to 'To Arrange Shipment' tab
+                to_arrange_tab = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'To Arrange Shipment')]"))
+                )
+                driver.execute_script("arguments[0].click();", to_arrange_tab)
+                print("[STEP 8.A.4] Switched to 'To Arrange Shipment' tab")
+                time.sleep(4)
+
+                # 8.A.5 Select all orders in 'To Arrange Shipment'
+                select_all_checkbox_ta = wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input[type='checkbox']"))
+                )
+                driver.execute_script("arguments[0].click();", select_all_checkbox_ta)
+                print("[STEP 8.A.5] Selected all orders in 'To Arrange Shipment'")
+                time.sleep(3)
+
+                # 8.A.6 Click "Ready To Ship"
+                ready_to_ship_button = wait.until(
+                    EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Ready To Ship')]/parent::button"))
+                )
+                driver.execute_script("arguments[0].click();", ready_to_ship_button)
+                print("[STEP 8.A.6] Clicked 'Ready To Ship'")
+                # *** INCREASED WAIT TIME FOR STABILITY AFTER STATUS CHANGE ***
+                print("[DEBUG] Waiting 8s for status change and page refresh after 'Ready To Ship'...")
+                time.sleep(8) 
+                
+                # --- Orders are now in 'To Handover' ---
+                
+                # 8.A.7 Switch to 'To Handover' tab
+                print("[DEBUG] Attempting to find and click 'To Handover' tab...")
+                to_handover_tab = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'To Handover')]"))
+                )
+                driver.execute_script("arguments[0].click();", to_handover_tab)
+                print("[STEP 8.A.7] Switched to 'To Handover' tab")
+                # *** INCREASED WAIT TIME FOR STABILITY AFTER TAB SWITCH ***
+                print("[DEBUG] Waiting 6s for 'To Handover' content to load...")
+                time.sleep(6)
+
+                # 8.A.8 Select all orders in 'To Handover'
+                print("[DEBUG] Checking for orders in 'To Handover' to select...")
+                select_all_checkbox_ho = wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input[type='checkbox']"))
+                )
+                driver.execute_script("arguments[0].click();", select_all_checkbox_ho)
+                print("[STEP 8.A.8] Selected all orders in 'To Handover'")
+                time.sleep(3)
+
+                # 8.A.9 Click "Print AWB" button (This triggers the print window)
+                print("[DEBUG] Looking for final 'Print AWB' button...")
+                print_awb_button = wait.until(
+                    EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Print AWB')]/parent::button"))
+                )
+                driver.execute_script("arguments[0].click();", print_awb_button)
+                print("[STEP 8.A.9] Clicked 'Print AWB' button (Initiates Print Window)")
+                time.sleep(5) # Increased wait time
+
+                # --- PRIMARY FLOW END (Jumps to Step 9) ---
+            
+            else:
+                # --- SECONDARY FLOW START: To Pack is Empty (SKIP Arrange Shipment) ---
+                
+                print("[INFO] 'To Pack' is empty. Switching directly to 'To Handover' to catch ready orders...")
+                
+                # 8.B.0 Switch to 'To Handover' tab
                 try:
                     to_handover_tab = wait.until(
                         EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'To Handover')]"))
                     )
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", to_handover_tab)
-                    time.sleep(2)
                     driver.execute_script("arguments[0].click();", to_handover_tab)
-                    print("[STEP] Clicked 'To Handover' tab")
+                    print("[STEP 8.B.0] Clicked 'To Handover' tab")
                     time.sleep(4)
                 except TimeoutException:
-                    print("[ERROR] Could not find 'To Handover' tab")
+                    print("[ERROR] Could not find 'To Handover' tab. Automation cannot proceed without print candidates.")
                     return
                 
-                print("[DEBUG] Looking for select-all checkbox in 'To Handover'...")
+                # 8.B.1 Select all orders in 'To Handover'
                 try:
-                    select_all_checkbox = wait.until(
+                    select_all_checkbox_ho = wait.until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input[type='checkbox']"))
                     )
-                    print("[DEBUG] Found checkbox")
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", select_all_checkbox)
-                    time.sleep(2)
-                    driver.execute_script("arguments[0].click();", select_all_checkbox)
-                    print("[STEP] Selected all orders in 'To Handover'")
+                    driver.execute_script("arguments[0].click();", select_all_checkbox_ho)
+                    print("[STEP 8.B.1] Selected all orders in 'To Handover'")
                 except TimeoutException:
-                    print("[ERROR] Could not find checkbox in 'To Handover'")
+                    print("[WARN] No orders found in 'To Handover'. Ending job as nothing needs printing.")
                     return
                 time.sleep(3)
 
-                try:
-                    print("[DEBUG] Looking for 'Print AWB' button...")
-                    print_awb_button = wait.until(
-                        EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Print AWB')]/parent::button"))
-                    )
-                    print("[DEBUG] Found 'Print AWB' button")
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", print_awb_button)
-                    time.sleep(2)
-                    driver.execute_script("arguments[0].click();", print_awb_button)
-                    print("[STEP] Clicked 'Print AWB' button")
-                except TimeoutException:
-                    print("[ERROR] Could not find 'Print AWB' button")
-                    return
-                time.sleep(3)
-
-            else:
-                print("[INFO] 'To Pack' has orders. Proceeding with Pack & Print...")
-                
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input")))
-                print("[STEP] Orders list loaded")
-
-                try:
-                    print("[DEBUG] Looking for select-all checkbox...")
-                    select_all_checkbox = wait.until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "input.next-checkbox-input[type='checkbox']"))
-                    )
-                    print("[DEBUG] Found checkbox")
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", select_all_checkbox)
-                    time.sleep(2)
-                    driver.execute_script("arguments[0].click();", select_all_checkbox)
-                    print("[STEP] Selected all pending orders")
-                except TimeoutException:
-                    print("[ERROR] Could not find the select-all checkbox.")
-                    driver.save_screenshot("error_checkbox.png")
-                    return
-                time.sleep(3)
-
-                try:
-                    print("[DEBUG] Looking for Pack & Print button...")
-                    pack_print_button = wait.until(
-                        EC.presence_of_element_located(
-                            (By.XPATH, "//span[contains(text(), 'Pack') and contains(text(), 'Print')]/parent::button")
-                        )
-                    )
-                    print("[DEBUG] Found Pack & Print button")
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", pack_print_button)
-                    time.sleep(2)
-                    driver.execute_script("arguments[0].click();", pack_print_button)
-                    print("[STEP] Clicked Pack & Print")
-                except TimeoutException:
-                    print("[ERROR] Could not find Pack & Print button.")
-                    driver.save_screenshot("error_pack_print.png")
-                    return
-                time.sleep(3)
-
-                try:
-                    ship_and_print = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Ship and Print')]"))
-                    )
-                    ship_and_print.click()
-                    print("[STEP] Clicked Ship and Print")
-                except TimeoutException:
-                    try:
-                        print_only = WebDriverWait(driver, 8).until(
-                            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Print Only')]"))
-                        )
-                        print_only.click()
-                        print("[STEP] Clicked Print Only")
-                    except TimeoutException:
-                        print("[ERROR] Neither 'Ship and Print' nor 'Print Only' button was found.")
-                        return
+                # 8.B.2 Click "Print AWB" button
+                print_awb_button = wait.until(
+                    EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Print AWB')]/parent::button"))
+                )
+                driver.execute_script("arguments[0].click();", print_awb_button)
+                print("[STEP 8.B.2] Clicked 'Print AWB' button (Initiates Print Window)")
                 time.sleep(5)
 
+                # --- SECONDARY FLOW END (Jumps to Step 9) ---
+
         except Exception as e:
-            print(f"[ERROR] Error during order checking: {e}")
+            print(f"[ERROR] Error during order processing: {e}")
+            import traceback
+            traceback.print_exc()
             return
+
+        # --- Print Flow Begins (Steps 9-11 - Same for both flows) ---
 
         # 9) Switch to print window
-        if len(driver.window_handles) > 1:
-            driver.switch_to.window(driver.window_handles[-1])
-            print("[STEP] Switched to print window")
-        else:
-            print("[WARN] Print window did not open automatically. Stopping.")
+        # Wait until a new window/tab appears
+        try:
+            WebDriverWait(driver, 15).until(EC.number_of_windows_to_be(len(window_handles_before) + 1))
+        except TimeoutException:
+            print("[ERROR] Timeout waiting for new print window to open. Did the print action succeed?")
             return
 
+        # Switch to the new window/tab
+        driver.switch_to.window(driver.window_handles[-1])
+        print("[STEP 9] Switched to print window")
+        
         wait.until(EC.url_contains("/apps/order/print"))
-        print("[STEP] Print page loaded")
+        print("[STEP 9] Print page loaded")
         time.sleep(3)
 
         # 10) Click the "Print" button on Daraz page
         try:
-            print("[DEBUG] Looking for Daraz 'Print' button...")
             daraz_print_button = wait.until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-spm='d_button_print']"))
             )
-            print("[DEBUG] Found Daraz 'Print' button")
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", daraz_print_button)
-            time.sleep(2)
             driver.execute_script("arguments[0].click();", daraz_print_button)
-            print("[STEP] Clicked Daraz 'Print' button - Chrome print dialog should open now")
+            print("[STEP 10] Clicked Daraz 'Print' button - Chrome print dialog should open now")
             time.sleep(3)
         except TimeoutException:
             print("[ERROR] Could not find Daraz 'Print' button")
-            driver.save_screenshot("error_daraz_print.png")
             return
 
-        # 11) Automate Chrome print dialog with ONLY KEYBOARD FALLBACK (Method 2)
+        # 11) Automate Chrome print dialog with ONLY KEYBOARD FALLBACK
         print("=" * 60)
         print("[INFO] Starting Chrome print dialog automation...")
-        print(f"[INFO] Target printer: {PRINTER_NAME}")
-        print("[INFO] **Using ONLY KEYBOARD FALLBACK method (Method 2)**")
+        print("[INFO] **Using ONLY KEYBOARD FALLBACK method**")
         print("=" * 60)
         
-        # Directly call the keyboard fallback method (Method 2)
         success = automate_print_dialog_keyboard_fallback()
         
         if success:
-            print("=" * 60)
             print("[SUCCESS] ✓✓✓ AUTOMATION COMPLETED SUCCESSFULLY! ✓✓✓")
-            print("[SUCCESS] ✓ Print job sent to HP LaserJet 1020")
-            print("[SUCCESS] ✓ Settings: 4 pages per sheet, Fit to printable area")
-            print("=" * 60)
         else:
-            print("=" * 60)
             print("[ERROR] ❌ Automation failed to complete automatically")
-            print("=" * 60)
         
-        # BROWSER WILL STAY OPEN - Wait for user to manually check/fix
+        # BROWSER WILL STAY OPEN 
         print("\n" + "=" * 60)
         print("🔵 BROWSER WILL STAY OPEN FOR MANUAL INSPECTION")
-        print("=" * 60)
-        print("[INFO] You can now:")
-        print("  ✓ Check if settings are correct")
-        print("  ✓ Manually adjust if needed")
-        print("  ✓ Click Print button manually if not done")
-        print("  ✓ Verify the print job")
-        print("\n[INFO] Press Ctrl+C in terminal to close browser when done")
         print("=" * 60)
         
         # Keep browser open indefinitely
@@ -329,16 +322,9 @@ def run_flow():
     except KeyboardInterrupt:
         print("\n[INFO] Script interrupted by user. Closing browser...")
     except Exception as e:
-        print(f"[ERROR] Automation failed: {e}")
+        print(f"[ERROR] Automation failed: Message: {e}")
         import traceback
         traceback.print_exc()
-        print("\n[INFO] Browser will stay open for inspection...")
-        print("[INFO] Press Ctrl+C to close browser")
-        try:
-            while True:
-                time.sleep(10)
-        except KeyboardInterrupt:
-            print("\n[INFO] Closing browser...")
     finally:
         if driver:
             try:
@@ -348,27 +334,8 @@ def run_flow():
                 pass
 
 
-def schedule_job():
-    """Schedules the flow to run daily at 11:59 PM."""
-    print("[INFO] Scheduling daily job for 23:59...")
-    schedule.every().day.at("23:59").do(run_flow)
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
-
-
 if __name__ == "__main__":
     print("=" * 60)
     print("DARAZ AUTOMATION WITH HP LASERJET 1020")
     print("=" * 60)
-    print(f"Target Printer: {PRINTER_NAME}")
-    print("Settings: 4 pages per sheet, Fit to printable area")
-    print("🔵 Browser will STAY OPEN for manual inspection")
-    print("=" * 60)
-    print()
-    
-    # Run immediately
     run_flow()
-    
-    # Uncomment to schedule daily at 11:59 PM:
-    # schedule_job()
