@@ -3,6 +3,8 @@
 import time
 import schedule
 import pyautogui
+import os
+from dotenv import load_dotenv # <-- New Import!
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -14,9 +16,16 @@ from print_dialog_automation import automate_print_dialog_keyboard_fallback
 # -----------------------------
 # Credentials and configuration
 # -----------------------------
-EMAIL = "03332758016" # UPDATED EMAIL
-PASSWORD = "T@ha2005" # UPDATED PASSWORD
-PRINTER_NAME = "HP LaserJet 1020" # Your printer name
+
+# Load environment variables from .env file
+load_dotenv() 
+
+# Fetch variables from the environment
+# os.environ.get('VARIABLE_NAME', 'default_value_if_not_found')
+EMAIL = os.environ.get('DARAZ_EMAIL')
+PASSWORD = os.environ.get('DARAZ_PASSWORD')
+PRINTER_NAME = os.environ.get('PRINTER_NAME', "HP LaserJet 1020") # Default fallback if not in .env
+SCHEDULE_TIME = os.environ.get('SCHEDULE_TIME', "10:00") # Default fallback if not in .env
 
 # PyAutoGUI settings
 pyautogui.FAILSAFE = True
@@ -28,7 +37,19 @@ pyautogui.PAUSE = 0.3
 
 def run_flow():
     """Runs the Daraz Seller Center order print flow once."""
-    print("[INFO] Starting Daraz Seller Center automation...")
+    
+    # Check if essential credentials are loaded
+    if not EMAIL or not PASSWORD:
+        print("=" * 60)
+        print("[CRITICAL ERROR] EMAIL or PASSWORD not loaded from .env file.")
+        print("Please check your .env file and ensure DARAZ_EMAIL and DARAZ_PASSWORD are set.")
+        print("=" * 60)
+        return # Exit the function if credentials are missing
+
+    print("=" * 60)
+    print(f"[JOB START] Running Daraz automation job at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"[CONFIG] Printer: {PRINTER_NAME}")
+    print("=" * 60)
     driver = None
 
     try:
@@ -315,10 +336,6 @@ def run_flow():
         print("🔵 BROWSER WILL STAY OPEN FOR MANUAL INSPECTION")
         print("=" * 60)
         
-        # Keep browser open indefinitely
-        while True:
-            time.sleep(10)
-
     except KeyboardInterrupt:
         print("\n[INFO] Script interrupted by user. Closing browser...")
     except Exception as e:
@@ -328,14 +345,40 @@ def run_flow():
     finally:
         if driver:
             try:
+                # Give a short moment before closing after completion or failure
+                time.sleep(5)
                 driver.quit()
                 print("[INFO] ✓ Browser closed.")
             except:
                 pass
 
 
+def scheduled_job():
+    """Wrapper function to run the flow for the scheduler."""
+    try:
+        run_flow()
+    except Exception as e:
+        print(f"[SCHEDULER ERROR] Job failed to execute: {e}")
+        
+
 if __name__ == "__main__":
-    print("=" * 60)
-    print("DARAZ AUTOMATION WITH HP LASERJET 1020")
-    print("=" * 60)
-    run_flow()
+    
+    if not EMAIL or not PASSWORD:
+        print("=" * 60)
+        print("[CRITICAL SETUP ERROR] Could not load essential credentials.")
+        print("Please check your .env file and ensure required packages are installed.")
+        print("=" * 60)
+    else:
+        print("=" * 60)
+        print("DARAZ AUTOMATION SCHEDULER STARTED")
+        print(f"Set to run daily at: {SCHEDULE_TIME}")
+        print("KEEP THIS WINDOW OPEN to maintain the schedule.")
+        print("=" * 60)
+
+        # Schedule the job
+        schedule.every().day.at(SCHEDULE_TIME).do(scheduled_job)
+
+        # Main loop for the scheduler
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
